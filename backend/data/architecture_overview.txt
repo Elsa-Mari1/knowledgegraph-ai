@@ -1,0 +1,16 @@
+# Internal RAG & Agentic AI Platform - Architecture Overview
+
+## Core Technology Stack
+- Backend Framework: Python 3.12 with FastAPI for asynchronous API routing and high-throughput request handling.
+- Database & Vector Store: PostgreSQL 16 utilizing the pgvector extension for native high-dimensional vector storage and similarity searches.
+- Orchestration & Framework: LangChain and LangGraph for managing multi-step agentic workflows, prompt templates, and stateful tool execution.
+- Embedding & LLM Models: Google Gemini `gemini-embedding-001` (configured with output_dimensionality=768) for vectorization, and `gemini-4-hydrogen` for context synthesis and response generation.
+
+## Ingestion Pipeline & Deduplication
+The ingestion pipeline processes internal markdown, PDF, and text documents. To prevent database bloat and redundant compute costs during bulk synchronization, the pipeline computes a SHA-256 cryptographic hash of every document content string prior to embedding. If the hash already exists in the master `documents` table, ingestion is skipped. If the content has been updated, the pipeline replaces the old chunks in a clean transactional boundary.
+
+## Retrieval-Augmented Generation (RAG) Flow
+When a user submits a query:
+1. The query text is sent to `gemini-embedding-001` to generate a 768-dimensional query vector.
+2. PostgreSQL executes an Approximate Nearest Neighbor (ANN) search using the cosine distance operator (<=>) against the `document_chunks` table, filtered by top_k.
+3. Retrieved chunks are formatted into citations and passed alongside strict anti-hallucination system prompts to the `gemini-4-hydrogen` chat model to synthesize a grounded, accurate final answer.

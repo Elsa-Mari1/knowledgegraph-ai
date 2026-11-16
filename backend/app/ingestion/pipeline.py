@@ -80,8 +80,20 @@ class IngestionPipeline:
             raise e
         finally:
             db.close()
-if __name__ =="__main__":
-    # Test ingestion with a sample technical document string
+if __name__ == "__main__":
+    from pathlib import Path
+    # Read the updated architecture document
+    file_path = Path("data/architecture_overview.txt")
+    content = file_path.read_text(encoding="utf-8")
+
+    # Initialise the ingestion pipeline
     pipeline = IngestionPipeline()
-    sample_text= """..."""
-    pipeline.ingest_text(filename="architecture_overview.txt", content=sample_text)
+
+    # Ingest the document
+    document_id = pipeline.ingest_text(
+        filename=file_path.name,
+        content=content
+    )
+
+    print(f"Successfully ingested {file_path.name}!")
+    print(f"Document ID: {document_id}")
